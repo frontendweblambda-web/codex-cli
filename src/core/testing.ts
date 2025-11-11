@@ -4,7 +4,7 @@ import { setupVitest } from "./vitest.js";
 import { setupJest } from "./jest.js";
 import { setupPlaywright } from "./playwright.js";
 import { setupCypress } from "./cypress.js";
-import { Answers } from "../cli/prompt.js";
+import { Answers } from "../cli/prompt-duplicate.js";
 
 export async function setupTesting(targetDir: string, config: Answers) {
   if (config.testing === "none") {

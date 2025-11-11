@@ -3,7 +3,7 @@ import path from "path";
 import chalk from "chalk";
 import { execa } from "execa";
 import { detectPackageManager } from "./package-manager.js";
-import { Answers } from "../cli/prompt.js";
+import { Answers } from "../cli/prompt-duplicate.js";
 
 /**
  * Sets up ESLint automatically for React (Vite), Next.js, or Vue (Vite)

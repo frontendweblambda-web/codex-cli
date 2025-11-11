@@ -1,23 +1,47 @@
 {
-  "name": "codex-app",
+  "name": "codex-cli",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/cli/index.js",
+  "description": "🚀 Codex CLI – The unified, framework-agnostic app generator for React, Next.js, Vue, Svelte, and Node.",
   "type": "module",
+  "main": "./dist/cli/index.js",
   "bin": {
-    "create-codify-app": "./dist/cli/index.js"
+    "codex": "./dist/cli/index.js",
+    "create-codex": "./dist/cli/index.js"
   },
   "scripts": {
-    "dev": "tsx src/cli/index.ts",
     "build": "tsc -p .",
-    "start": "node dist/cli/index.js"
+    "start": "node dist/cli/index.js",
+    "dev": "tsx src/cli/index.ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "git@fwlambda:frontendweblambda-web/codex-app.git"
+    "url": "git@fwlambda:frontendweblambda-web/codex-cli.git"
   },
-  "keywords": [],
-  "author": "frontendweb-sg",
+  "bugs": {
+    "url": "https://github.com/frontendweblambda-web/codex-cli/issues"
+  },
+  "keywords": [
+    "codex",
+    "cli",
+    "scaffold",
+    "generator",
+    "vite",
+    "react",
+    "vue",
+    "nextjs",
+    "svelte",
+    "typescript",
+    "starter",
+    "boilerplate",
+    "fullstack"
+  ],
+  "author": {
+    "name": "frontendweb-sg",
+    "email": "frontendweb.ak@gmail.com",
+    "url": "https://github.com/frontendweblambda-web"
+  },
   "license": "ISC",
   "dependencies": {
     "@octokit/auth-oauth-device": "^8.0.3",
@@ -25,6 +49,7 @@
     "boxen": "^8.0.1",
     "chalk": "^5.6.2",
     "chalk-table": "^1.0.2",
+    "cli-progress": "^3.12.0",
     "commander": "^14.0.2",
     "deepmerge": "^4.3.1",
     "dotenv": "^17.2.3",
@@ -51,5 +76,14 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

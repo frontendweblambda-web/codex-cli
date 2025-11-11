@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import os from "os";
 import path from "path";
 import chalk from "chalk";
-import type { Answers } from "../cli/prompt.js";
+import type { Answers } from "../cli/prompt-duplicate.js";
 
 const CONFIG_DIR = path.join(os.homedir(), ".codex");
 const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");

@@ -17,6 +17,8 @@ export async function setupVitest(targetDir: string, framework: string) {
     "@testing-library/dom",
     "@testing-library/jest-dom",
     "@testing-library/user-event",
+    "@types/jest",
+    "jsdom",
   ];
 
   if (framework === "react") deps.push("@testing-library/react");
@@ -69,7 +71,7 @@ import App from "../app";
 
 test("renders the app", () => {
   render(<App />);
-  expect(screen.getByText(/hello/i)).toBeInTheDocument();
+  expect(screen.getByText(/Vite + React/i)).toBeInTheDocument();
 });
 `
       : `
@@ -78,7 +80,7 @@ import App from "../App.vue";
 
 test("renders the app", () => {
   render(App);
-  expect(screen.getByText(/hello/i)).toBeTruthy();
+  expect(screen.getByText(/Vite + React/i)).toBeTruthy();
 });
 `;
 

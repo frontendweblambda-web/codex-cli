@@ -1,30 +1,43 @@
+// src/core/exit.ts
 import chalk from "chalk";
 
+import { stopSpinner } from "./spinner.js";
+import { cleanupRegisteredPaths } from "./cleanup.js";
+
+let exitHandled = false;
+
 /**
- * Handles SIGINT (Ctrl+C) and cleanly exits the CLI.
+ * Setup global signal handlers (Ctrl+C, uncaught errors)
  */
 export function setupGracefulExit() {
-  process.on("SIGINT", () => {
-    console.log(chalk.yellow("\n\n⚠️  Process interrupted by user (Ctrl+C)."));
-    console.log(chalk.gray("🧹 Cleaning up before exit...\n"));
-    process.exit(0);
+  const handleExitGracefully = async (signal?: string) => {
+    if (exitHandled) return;
+    exitHandled = true;
+
+    console.log(
+      chalk.yellow(`\n⚠️  Caught ${signal || "exit"} — cleaning up...`)
+    );
+    stopSpinner(false);
+
+    await cleanupRegisteredPaths();
+
+    console.log(chalk.gray("\n👋 Exiting Codex App Generator gracefully.\n"));
+    process.exit(signal === "SIGINT" ? 130 : 1);
+  };
+
+  process.on("SIGINT", () => handleExitGracefully("SIGINT"));
+  process.on("SIGTERM", () => handleExitGracefully("SIGTERM"));
+
+  process.on("uncaughtException", async (err) => {
+    console.error(chalk.red("\n❌ Uncaught error:"), err);
+    await handleExitGracefully("uncaughtException");
   });
 
-  process.on("uncaughtException", (err) => {
-    if (err.name === "ExitPromptError") {
-      console.log(chalk.yellow("\n\n👋 Prompt cancelled by user.\n"));
-      process.exit(0);
-    }
-    console.error(chalk.red("❌ Uncaught error:"), err);
-    process.exit(1);
+  process.on("unhandledRejection", async (reason) => {
+    console.error(chalk.red("\n❌ Unhandled promise rejection:"), reason);
+    await handleExitGracefully("unhandledRejection");
   });
 
-  process.on("unhandledRejection", (reason: any) => {
-    if (reason?.name === "ExitPromptError") {
-      console.log(chalk.yellow("\n\n👋 Prompt cancelled by user.\n"));
-      process.exit(0);
-    }
-    console.error(chalk.red("❌ Unhandled rejection:"), reason);
-    process.exit(1);
-  });
+  // Return handle to manually trigger cleanup if needed
+  return handleExitGracefully;
 }

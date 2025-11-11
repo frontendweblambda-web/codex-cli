@@ -1,7 +1,5 @@
 import inquirer from "inquirer";
-export function isFlat(structure: string) {
-  return structure === "flat";
-}
+
 export type Answers = {
   projectName: string;
   description?: string;
@@ -17,8 +15,8 @@ export type Answers = {
   routing?: "app" | "pages" | "react-router" | "vue-router";
   store?: "pinia" | "zustand" | "redux";
 
-  language: "typescript" | "javascript";
-  structure: "flat" | "src-folder";
+  language: "typescript" | "javascript"; // ✅ added
+  structure: "flat" | "src-folder"; // ✅ added
 
   testing: "vitest" | "jest" | "none" | "playwright" | "cypress";
   linting: "eslint" | "none";
@@ -40,7 +38,7 @@ export type Answers = {
   initGit: boolean;
   createRemote: boolean;
   repoVisibility?: "public" | "private";
-  remoteOrg?: string | null;
+  remoteOrg?: string | null; // optional GitHub org
 
   setupCI: boolean;
   ciProvider?: "vercel" | "netlify" | "github-actions" | "none";
@@ -54,16 +52,19 @@ export async function askQuestions(
   defaultName?: string,
   flags: any = {}
 ): Promise<Answers> {
+  // validation helpers
   const validateName = (v: string) => {
     if (!v || !v.trim()) return "Project name cannot be empty";
     if (!/^[a-z0-9\-_]+$/i.test(v)) return "Use only letters, numbers, - or _";
     return true;
   };
 
+  // ✅ Ensure CLI args are preloaded
   if (defaultName && !flags.projectName) flags.projectName = defaultName;
+
   const answers: Partial<Answers> = {};
 
-  // ──────────────── 1️⃣ GIT & CI FIRST ────────────────
+  // ──────────────── 1. GIT FIRST ────────────────
   const git = await inquirer.prompt([
     {
       type: "confirm",
@@ -118,7 +119,7 @@ export async function askQuestions(
   ]);
   Object.assign(answers, git);
 
-  // ──────────────── 2️⃣ PROJECT METADATA ────────────────
+  // Basic metadata
   const meta = await inquirer.prompt([
     {
       type: "input",
@@ -126,18 +127,18 @@ export async function askQuestions(
       message: "🧱 Project name:",
       default: defaultName || flags.projectName || "my-codex-app",
       validate: validateName,
-      when: !(defaultName || flags.projectName),
+      when: !(defaultName || flags.projectName), // 🧠 skip if already passed
     },
     {
       type: "input",
       name: "description",
-      message: "📝 Short description:",
+      message: "📝 Short description (optional):",
       default: flags.description || "",
     },
     {
       type: "input",
       name: "author",
-      message: "👤 Author (name/email):",
+      message: "👤 Author (name/email) (optional):",
       default: flags.author || "",
     },
     {
@@ -157,7 +158,7 @@ export async function askQuestions(
   ]);
   Object.assign(answers, meta);
 
-  // ──────────────── 3️⃣ LANGUAGE & STRUCTURE ────────────────
+  // ──────────────── 3. LANGUAGE & STRUCTURE ────────────────
   const language = await inquirer.prompt([
     {
       type: "list",
@@ -182,14 +183,14 @@ export async function askQuestions(
   ]);
   Object.assign(answers, language);
 
-  // ──────────────── 4️⃣ ENVIRONMENT / PACKAGE SETUP ────────────────
+  // Environment choices
   const env = await inquirer.prompt([
     {
       type: "list",
       name: "registry",
       message: "📦 Package manager:",
       choices: ["npm", "pnpm", "yarn", "bun"],
-      default: flags.registry || "pnpm",
+      default: flags.registry || "npm",
     },
     {
       type: "list",
@@ -204,7 +205,7 @@ export async function askQuestions(
   ]);
   Object.assign(answers, env);
 
-  // ──────────────── 5️⃣ FRAMEWORK / UI / ROUTING / STORE ────────────────
+  // Framework / UI / routing
   const fw = await inquirer.prompt([
     {
       type: "list",
@@ -214,12 +215,9 @@ export async function askQuestions(
         { name: "React (Vite)", value: "react" },
         { name: "Next.js (App Router)", value: "next" },
         { name: "Vue (Vite)", value: "vue" },
-        { name: "Svelte", value: "svelte" },
-        { name: "Framer", value: "framer" },
-        { name: "React Router (SPA)", value: "rect-router" },
       ],
       default: flags.framework || "react",
-      when: !flags.framework,
+      when: !flags.framework, // 👈 skip if CLI provided
     },
     {
       type: "list",
@@ -227,135 +225,233 @@ export async function askQuestions(
       message: "🎨 UI library:",
       choices: ["tailwind", "mui", "shadcn", "antd", "none"],
       default: flags.ui || "tailwind",
-      when: !flags.ui,
+      when: !flags.ui, // 👈 skip if CLI provided
     },
     {
       type: "list",
       name: "routing",
       message: "🗺 Routing:",
-      choices: (a) => {
-        if (a.framework === "next")
+      choices: (answersSoFar: any) => {
+        const fwChoice = (answersSoFar.framework ||
+          answers.framework) as string;
+        if (fwChoice === "next")
           return [
             { name: "App Router (recommended)", value: "app" },
             { name: "Pages Router", value: "pages" },
           ];
-        if (a.framework === "vue")
+        if (fwChoice === "vue")
           return [{ name: "Vue Router", value: "vue-router" }];
-        return [{ name: "React Router", value: "react-router" }];
+        return [{ name: "React Router (vite)", value: "react-router" }];
       },
-    },
-    {
-      type: "list",
-      name: "store",
-      message: "🧠 State management:",
-      choices: ["zustand", "redux", "pinia", "none"],
-      default: "zustand",
+      default: flags.routing || undefined,
     },
   ]);
   Object.assign(answers, fw);
 
-  // ──────────────── 6️⃣ QUALITY TOOLS ────────────────
+  // Testing, linting, formatting and commit conventions
   const quality = await inquirer.prompt([
     {
       type: "list",
       name: "editor",
-      message: "🧠 Preferred editor:",
-      choices: ["vscode", "sublime", "atom", "none"],
-      default: "vscode",
+      message: "🧠 Preferred editor configuration:",
+      choices: [
+        { name: "VS Code", value: "vscode" },
+        { name: "Sublime Text", value: "sublime" },
+        { name: "Atom", value: "atom" },
+        { name: "None", value: "none" },
+      ],
+      default: flags.editor || "vscode",
+      when: !flags.editor, // skip if passed via CLI
     },
     {
       type: "list",
       name: "testing",
       message: "🧪 Testing framework:",
-      choices: ["vitest", "jest", "playwright", "cypress", "none"],
-      default: flags.testing || "vitest",
+      choices: [
+        { name: "Vitest (unit, fast, Vite-friendly)", value: "vitest" },
+        { name: "Jest (Next.js default)", value: "jest" },
+        { name: "Playwright (E2E browser tests)", value: "playwright" },
+        { name: "Cypress (E2E UI tests)", value: "cypress" },
+        { name: "None", value: "none" },
+      ],
+      default: flags.testing || "none",
+      when: !flags.testing,
     },
+
     {
       type: "list",
       name: "linting",
       message: "🔍 Linting:",
-      choices: ["eslint", "none"],
+      choices: [
+        { name: "ESLint", value: "eslint" },
+        { name: "None", value: "none" },
+      ],
       default: flags.linting || "eslint",
     },
     {
       type: "list",
       name: "formatting",
-      message: "🎨 Formatter:",
-      choices: ["prettier", "none"],
+      message: "🎨 Formatting:",
+      choices: [
+        { name: "Prettier", value: "prettier" },
+        { name: "None", value: "none" },
+      ],
       default: flags.formatting || "prettier",
     },
     {
       type: "confirm",
       name: "commitConventions",
-      message: "🔁 Use Conventional Commits?",
+      message: "🔁 Use Conventional Commits (commitlint + husky)?",
       default: true,
     },
   ]);
   Object.assign(answers, quality);
 
-  // ──────────────── 7️⃣ INFRASTRUCTURE ────────────────
+  // Auth, DB, caching, analytics
   const infra = await inquirer.prompt([
     {
       type: "confirm",
       name: "auth",
-      message: "🔐 Add authentication?",
+      message: "🔐 Add authentication (starter setup)?",
       default: !!flags.auth,
     },
     {
       type: "list",
       name: "authProvider",
       message: "🔑 Auth Provider:",
-      choices: ["custom", "nextauth", "clerk", "supabase", "none"],
-      when: (a) => a.auth === true,
+      choices: [
+        { name: "NextAuth (Next only)", value: "nextauth" },
+        { name: "Clerk", value: "clerk" },
+        { name: "Supabase Auth", value: "supabase" },
+        { name: "None", value: "none" },
+      ],
+      when: (a: any) => a.auth === true,
       default: "nextauth",
     },
     {
       type: "list",
       name: "database",
-      message: "🗄 Database:",
-      choices: ["none", "postgresql", "supabase", "mongo", "sqlite"],
+      message: "🗄 Database (for starter config):",
+      choices: [
+        { name: "None", value: "none" },
+        { name: "Postgres (Prisma)", value: "prisma-postgres" },
+        { name: "Supabase", value: "supabase" },
+        { name: "MongoDB", value: "mongo" },
+        { name: "SQLite (local)", value: "sqlite" },
+      ],
       default: flags.database || "none",
     },
     {
       type: "list",
       name: "orm",
       message: "🧭 ORM:",
-      choices: (a) => {
-        if (a.database === "mongo") return ["mongoose", "typeorm", "none"];
-        if (a.database !== "none") return ["prisma", "typeorm", "none"];
-        return ["none"];
+      choices: (a: any) => {
+        if (a.database === "prisma-postgres" || a.database === "sqlite")
+          return [
+            { name: "Prisma", value: "prisma" },
+            { name: "None", value: "none" },
+          ];
+        if (a.database === "mongo")
+          return [
+            { name: "Mongoose/TypeORM", value: "typeorm" },
+            { name: "None", value: "none" },
+          ];
+        return [{ name: "None", value: "none" }];
       },
-      when: (a) => a.database !== "none",
+      when: (a: any) => a.database && a.database !== "none",
       default: flags.orm || "prisma",
     },
     {
       type: "list",
       name: "caching",
       message: "⚡ Caching strategy:",
-      choices: ["none", "api-cache", "edge", "redis"],
+      choices: [
+        { name: "None", value: "none" },
+        {
+          name: "API-level cache (stale-while-revalidate)",
+          value: "api-cache",
+        },
+        { name: "Edge cache (CDN)", value: "edge" },
+        { name: "Redis (external)", value: "redis" },
+      ],
       default: flags.caching || "none",
     },
     {
       type: "confirm",
       name: "analytics",
-      message: "📈 Add analytics (Plausible / PostHog)?",
+      message: "📈 Add analytics starter (PostHog / Plausible)?",
       default: false,
     },
     {
       type: "confirm",
       name: "monitoring",
-      message: "🛠 Add monitoring (Sentry / Playwright traces)?",
+      message: "🛠 Add error monitoring (Sentry / Playwright traces)?",
       default: false,
     },
   ]);
   Object.assign(answers, infra);
 
-  // ──────────────── 8️⃣ AUTOMATION & AI ────────────────
+  // Git & Repo details
+  const repo = await inquirer.prompt([
+    {
+      type: "confirm",
+      name: "initGit",
+      message: "🐙 Initialize local git repo?",
+      default: true,
+    },
+    {
+      type: "confirm",
+      name: "createRemote",
+      message: "📦 Create remote GitHub repo?",
+      default: false,
+      when: (a: any) => a.initGit === true,
+    },
+    {
+      type: "input",
+      name: "remoteOrg",
+      message: "🏢 GitHub organization (leave blank to use your account)",
+      when: (a: any) => a.createRemote === true,
+      default: flags.remoteOrg || "",
+    },
+    {
+      type: "list",
+      name: "repoVisibility",
+      message: "🔒 Repo visibility:",
+      choices: [
+        { name: "Public", value: "public" },
+        { name: "Private", value: "private" },
+      ],
+      when: (a: any) => a.createRemote === true,
+      default: "public",
+    },
+    {
+      type: "confirm",
+      name: "setupCI",
+      message: "⚡ Configure CI / deploy?",
+      default: false,
+      when: (a: any) => a.createRemote === true,
+    },
+    {
+      type: "list",
+      name: "ciProvider",
+      message: "🚀 Deployment target:",
+      choices: [
+        { name: "Vercel", value: "vercel" },
+        { name: "Netlify", value: "netlify" },
+        { name: "GitHub Actions", value: "github-actions" },
+        { name: "None", value: "none" },
+      ],
+      when: (a: any) => a.setupCI === true,
+    },
+  ]);
+  Object.assign(answers, repo);
+
+  // Convenience & automation
   const automation = await inquirer.prompt([
     {
       type: "confirm",
       name: "autoInstall",
-      message: "⚙️ Run install after generation?",
+      message: "⚙️ Run package install after generation?",
       default: true,
     },
     {
@@ -367,11 +463,12 @@ export async function askQuestions(
     {
       type: "confirm",
       name: "useAI",
-      message: "🤖 Let AI suggest or optimize setup?",
+      message: "🤖 Let AI suggest config (experimental)?",
       default: false,
     },
   ]);
   Object.assign(answers, automation);
 
+  // final return as typed Answers
   return answers as Answers;
 }

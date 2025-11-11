@@ -16,8 +16,13 @@ import { setupEditorConfig } from "../core/editor.js";
 import { setupLinting } from "../core/linting.js";
 import { setupGracefulExit } from "../core/exit.js";
 import { registerCleanupPath } from "../core/cleanup.js";
-import { execa } from "execa";
 import { setupTesting } from "../core/testing.js";
+import ora, { Ora } from "ora";
+import {
+  registerSpinnerStopper,
+  startSpinner,
+  stopSpinner,
+} from "../core/spinner.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,7 +46,12 @@ async function main() {
       console.log(chalk.magentaBright("\n🚀 Welcome to Codex App Generator\n"));
 
       // 🧠 STEP 1: Try to load previous config
+      const handleExitGracefully = setupGracefulExit();
+      registerSpinnerStopper();
+
+      let spinner = startSpinner("Loading previous configuration...");
       let answers = await previousConfig(cliProjectName, options);
+      stopSpinner(true, "Loaded configuration");
 
       // ✅ STEP 2: Define a guaranteed project name
       const finalName = answers.projectName || cliProjectName || "my-codex-app";
@@ -162,6 +172,11 @@ Happy coding! 🎨
 }
 
 main().catch((err) => {
+  if (err?.name === "ExitPromptError") {
+    console.log(chalk.yellow("\n\n👋 Cancelled by user.\n"));
+    process.exit(0);
+  }
+
   console.error(chalk.red("❌ Fatal error:"), err);
   process.exit(1);
 });

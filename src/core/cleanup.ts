@@ -1,72 +1,34 @@
-import chalk from "chalk";
+// src/core/cleanup.ts
 import fs from "fs-extra";
+import chalk from "chalk";
 
-let cleanupPath: string | null = null;
-let spinnerStopper: (() => void) | null = null;
+const cleanupPaths: string[] = [];
 
-/**
- * Register a project path to clean if the process exits early.
- */
+/** Register a path (directory or file) to be cleaned up on exit. */
 export function registerCleanupPath(path: string) {
-  cleanupPath = path;
+  if (!cleanupPaths.includes(path)) cleanupPaths.push(path);
 }
 
-/**
- * Register a spinner (or cleanup callback) to stop on exit.
- */
-export function registerSpinnerStopper(stopFn: () => void) {
-  spinnerStopper = stopFn;
-}
-
-/**
- * Perform cleanup when process is interrupted or crashes.
- */
-async function handleExitGracefully(message: string) {
-  console.log(chalk.yellow(`\n${message}`));
-
-  if (spinnerStopper) {
-    spinnerStopper();
-    spinnerStopper = null;
-  }
-
-  if (cleanupPath && (await fs.pathExists(cleanupPath))) {
-    console.log(chalk.gray(`🧹 Removing partial project at ${cleanupPath}...`));
+/** Remove all registered paths (e.g., incomplete project directories). */
+export async function cleanupRegisteredPaths() {
+  if (!cleanupPaths.length) return;
+  console.log(chalk.yellow("\n🧹 Cleaning up incomplete project files..."));
+  for (const dir of cleanupPaths) {
     try {
-      await fs.remove(cleanupPath);
-      console.log(chalk.green(`✅ Cleaned up ${cleanupPath}\n`));
-    } catch (err: any) {
-      console.log(
-        chalk.red(`⚠️  Failed to delete ${cleanupPath}: ${err.message}`)
+      if (await fs.pathExists(dir)) await fs.remove(dir);
+      console.log(chalk.gray(`  Removed: ${dir}`));
+    } catch (err) {
+      console.warn(
+        chalk.red(`⚠️ Failed to remove ${dir}:`),
+        (err as Error).message
       );
     }
   }
-
-  process.exit(0);
+  cleanupPaths.length = 0;
 }
 
-/**
- * Setup signal handlers for Ctrl+C and unhandled errors.
- */
-export function setupGracefulExit() {
-  process.on("SIGINT", () =>
-    handleExitGracefully("⚠️  Process interrupted by user (Ctrl+C).")
-  );
-
-  process.on("uncaughtException", async (err) => {
-    if (err.name === "ExitPromptError") {
-      await handleExitGracefully("👋 Prompt cancelled by user.");
-      return;
-    }
-    console.error(chalk.red("\n❌ Uncaught error:"), err);
-    await handleExitGracefully("🛑 Exiting due to unhandled error.");
-  });
-
-  process.on("unhandledRejection", async (reason: any) => {
-    if (reason?.name === "ExitPromptError") {
-      await handleExitGracefully("👋 Prompt cancelled by user.");
-      return;
-    }
-    console.error(chalk.red("\n❌ Unhandled rejection:"), reason);
-    await handleExitGracefully("🛑 Exiting due to promise rejection.");
-  });
+/** Mark project as finalized (removes from cleanup list). */
+export function markProjectFinalized(path: string) {
+  const index = cleanupPaths.indexOf(path);
+  if (index !== -1) cleanupPaths.splice(index, 1);
 }
