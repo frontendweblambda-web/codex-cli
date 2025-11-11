@@ -14,12 +14,17 @@ import { setupPrettier } from "../core/prettier.js";
 import { previousConfig } from "../core/saved-config.js";
 import { setupEditorConfig } from "../core/editor.js";
 import { setupLinting } from "../core/linting.js";
+import { setupGracefulExit } from "../core/exit.js";
+import { registerCleanupPath } from "../core/cleanup.js";
+import { execa } from "execa";
+import { setupTesting } from "../core/testing.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const program = new Command();
 
+setupGracefulExit(); // ✅ Handle Ctrl+C and prompt cancellations
 async function main() {
   program
     .name("create-codex-app")
@@ -31,6 +36,7 @@ async function main() {
     .option("--skip-install", "Skip dependency installation")
     .option("--no-git", "Skip Git initialization")
     .action(async (cliProjectName, options) => {
+      const t1 = performance.now();
       console.clear();
       console.log(chalk.magentaBright("\n🚀 Welcome to Codex App Generator\n"));
 
@@ -58,6 +64,7 @@ async function main() {
 
       // ✅ STEP 4: Create directory
       await fs.ensureDir(projectDir);
+      registerCleanupPath(projectDir); // 🧠 register for cleanup if aborted
       console.log(chalk.cyan(`\n📁 Creating project in ${projectDir}\n`));
 
       // ✅ STEP 5: Generate base template
@@ -78,11 +85,15 @@ async function main() {
         await setupLinting(projectDir, answers);
       }
 
+      // After generating template, prettier, lint, etc.
+      if (answers.testing && answers.testing !== "none") {
+        await setupTesting(projectDir, answers);
+      }
       await setupEditorConfig(projectDir, answers.editor);
 
       // ✅ STEP 6: Install dependencies
       if (!options.skipInstall) {
-        console.log(chalk.cyan("\n📦 Installing dependencies...\n"));
+        // console.log(chalk.cyan("\n📦 Installing dependencies...\n"));
         await runInstaller(projectDir);
       }
 
@@ -143,9 +154,11 @@ Next steps:
 
 Happy coding! 🎨
 `);
+      console.log(chalk.cyan(`▶️ Time taken: ${(t2 - t1) / 1000}sec`));
     });
 
   await program.parseAsync(process.argv);
+  const t2 = performance.now();
 }
 
 main().catch((err) => {

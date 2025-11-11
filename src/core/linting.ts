@@ -11,9 +11,10 @@ import { Answers } from "../cli/prompt.js";
  */
 export async function setupLinting(targetDir: string, config: Answers) {
   const framework = config.framework;
-  console.log(
-    chalk.cyan(`🔍 Setting up ESLint for ${framework.toUpperCase()}...`)
-  );
+  console
+    .log
+    // chalk.cyan(`🔍 Setting up ESLint for ${framework.toUpperCase()}...`)
+    ();
 
   const pm = detectPackageManager();
   const pkgPath = path.join(targetDir, "package.json");
@@ -166,7 +167,7 @@ module.exports = {
       cwd: targetDir,
       stdio: "inherit",
     });
-    console.log(chalk.green("✅ ESLint dependencies installed."));
+    // console.log(chalk.green("✅ ESLint dependencies installed."));
   } catch (err: any) {
     console.log(chalk.red("❌ ESLint installation failed:"), err.message);
   }

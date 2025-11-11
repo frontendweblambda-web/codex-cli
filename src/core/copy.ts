@@ -38,7 +38,7 @@ export const copyTemplate = async (templateName: string, targetDir: string) => {
       throw new Error(`❌ Template not found: ${templatePath}`);
     }
 
-    console.log(chalk.cyan(`📂 Copying template from: ${templatePath}`));
+    // console.log(chalk.cyan(`📂 Copying template from: ${templatePath}`));
 
     await fs.copy(templatePath, targetDir, {
       filter: (src) =>
@@ -47,7 +47,7 @@ export const copyTemplate = async (templateName: string, targetDir: string) => {
         !src.includes(".git"),
     });
 
-    console.log(chalk.green(`✅ Template copied to ${targetDir}`));
+    // console.log(chalk.green(`✅ Template copied to ${targetDir}`));
   } catch (err: any) {
     console.error(chalk.red("❌ Failed to copy template:"), err.message);
     process.exit(1);

@@ -1,14 +1,29 @@
-export default function App() {
+import { useState } from "react";
+
+function App() {
+  const [count, setCount] = useState(0);
+
   return (
-    <div
-      style={{
-        textAlign: "center",
-        padding: "4rem",
-        fontFamily: "sans-serif"
-      }}
-    >
-      <h1>🚀 Codex React App</h1>
-      <p>Your React + Vite app is ready!</p>
-    </div>
+    <>
+      <div>
+        <a href="https://vite.dev" target="_blank">
+          <img src="/vite.svg" className="logo" alt="Vite logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+        <p>
+          Edit <code>src/App.tsx</code> and save to test HMR
+        </p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
   );
 }
+
+export default App;

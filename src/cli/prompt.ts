@@ -14,7 +14,7 @@ export type Answers = {
   ui: "tailwind" | "mui" | "shadcn" | "antd" | "none";
   routing?: "app" | "pages" | "react-router" | "vue-router";
 
-  testing: "vitest" | "jest" | "none";
+  testing: "vitest" | "jest" | "none" | "playwright" | "cypress";
   linting: "eslint" | "none";
   formatting: "prettier" | "none";
   commitConventions: boolean; // conventional commits
@@ -185,12 +185,16 @@ export async function askQuestions(
       name: "testing",
       message: "🧪 Testing framework:",
       choices: [
-        { name: "Vitest (fast, Vite-friendly)", value: "vitest" },
-        { name: "Jest", value: "jest" },
+        { name: "Vitest (unit, fast, Vite-friendly)", value: "vitest" },
+        { name: "Jest (Next.js default)", value: "jest" },
+        { name: "Playwright (E2E browser tests)", value: "playwright" },
+        { name: "Cypress (E2E UI tests)", value: "cypress" },
         { name: "None", value: "none" },
       ],
-      default: flags.testing || "vitest",
+      default: flags.testing || "none",
+      when: !flags.testing,
     },
+
     {
       type: "list",
       name: "linting",

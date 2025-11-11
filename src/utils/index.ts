@@ -6,7 +6,10 @@ import path from "path";
  * Merges dependencies, devDependencies, and scripts
  * from a partial package.json into the main one.
  */
-export const mergePackageJson = async (targetDir: string, fragmentPath: string) => {
+export const mergePackageJson = async (
+  targetDir: string,
+  fragmentPath: string
+) => {
   const mainPkgPath = path.join(targetDir, "package.json");
 
   if (!(await fs.pathExists(mainPkgPath))) {
@@ -21,5 +24,5 @@ export const mergePackageJson = async (targetDir: string, fragmentPath: string) 
   });
 
   await fs.writeJson(mainPkgPath, merged, { spaces: 2 });
-  console.log(`📦 Merged ${path.basename(fragmentPath)} into package.json`);
+  // console.log(`📦 Merged ${path.basename(fragmentPath)} into package.json`);
 };

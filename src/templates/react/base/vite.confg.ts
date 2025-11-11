@@ -1,6 +1,7 @@
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+
 import path from "path";
 
 export default defineConfig({
@@ -12,19 +13,25 @@ export default defineConfig({
     }),
     tailwindcss(),
   ],
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
-      "@/components": path.resolve(__dirname, "src/components"),
-      "@/hooks": path.resolve(__dirname, "src/hooks"),
-      "@/utils": path.resolve(__dirname, "src/utils"),
-      "@/lib": path.resolve(__dirname, "src/lib"),
-      "@/routes": path.resolve(__dirname, "src/routes"),
-      "@/modules": path.resolve(__dirname, "src/modules"),
     },
   },
   server: {
     open: true,
     port: 5173,
+    host: true, // ✅ allows access from LAN (useful for preview/testing)
+  },
+
+  preview: {
+    port: 4173, // ✅ separate port for `vite preview`
+  },
+
+  build: {
+    outDir: "dist",
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000, // prevent noisy chunk warnings
   },
 });
